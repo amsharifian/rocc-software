@@ -1,16 +1,4 @@
-// Copyright 2018 IBM
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// See LICENSE for license details.
 
 #ifndef ROCC_SOFTWARE_SRC_XCUSTOM_H_
 #define ROCC_SOFTWARE_SRC_XCUSTOM_H_
@@ -32,12 +20,36 @@
   and x ## rd, x ## rs1, x ## rs2;              \
   srai x ## rd, x ## rd, offset;
 
+
+// Custom opcode values:
+// These values are defined at the following file:
+// src/main/scala/tile/LazyRoCC.scal
+//
+// You can have your own opcodes base on ISA user manual as well
 #define XCUSTOM_OPCODE(x) XCUSTOM_OPCODE_ ## x
 #define XCUSTOM_OPCODE_0 0b0001011
 #define XCUSTOM_OPCODE_1 0b0101011
 #define XCUSTOM_OPCODE_2 0b1011011
 #define XCUSTOM_OPCODE_3 0b1111011
 
+//RISCV custom instruciton format
+//   ------------------------------------------------------------------------------
+//  |   funct(7)  |  rs2(5) | rs1(5) | xd(1) | xs1(1) | xs2(1) | rd(5) | OpCode(7) |
+//   ------------------------------------------------------------------------------
+//
+//   1) Funct  : For different kinds of accelerator instructions; Value is designer's choice
+//   2) rs2    : Source register ID
+//   3) rs1    : Source register ID
+//   4) xd     : Set if destination register exists
+//   5) xs1    : Set if source register exists
+//   6) xs2    : Set if source register exists
+//   7) rd     : Destination register ID
+//   8) OpCode : Custom instruction opcode may be used in case of multiple accelerator
+//
+//
+//  In this example rs1 and rs2 are always exist -> 0x3
+//  If rd is 0 then xd is set to zero otherwise it's set to 1
+//
 #define XCUSTOM(x, rd, rs1, rs2, funct)         \
   XCUSTOM_OPCODE(x)                   |         \
   (rd                   << (7))       |         \
@@ -55,7 +67,11 @@
   ROCC_INSTRUCTION_R_R_R(x, rd, rs1, rs2, funct, 10, 11, 12)
 
 // rd, rs1, and rs2 are data
-// rd_n, rs1_n, and rs2_n are the register numbers to use
+// rd_n, rs_1, and rs2_n are the register numbers to use
+//
+//
+// Please note that "register" keyword here help us to tell compiler
+// impose move commands if it's necessary.
 #define ROCC_INSTRUCTION_R_R_R(x, rd, rs1, rs2, funct, rd_n, rs1_n, rs2_n) \
   {                                                                     \
     register uint64_t rd_  asm ("x" # rd_n);                            \
